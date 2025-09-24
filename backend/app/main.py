@@ -1,21 +1,55 @@
 from fastapi import FastAPI
-from database import SessionLocal, engine, Base
 
-# Crear tablas si no existen
-Base.metadata.create_all(bind=engine)
+from core.config import settings
+from core.database import Base, engine
+from middleware.cors import add_cors_middleware
+from routers.public import general
+from routers.private import aire, agua
 
+# Crear tablas si no existen (comentar en producción para mejor performance)
+# Base.metadata.create_all(bind=engine)
+
+# Crear aplicación FastAPI
 app = FastAPI(
-    title="Capstone Backend",
-    version="0.1",
-    description="""
-API prototipo hecha con FastAPI + Docker + PostgreSQL (Neon) y hosteada en Render.
-"""
+    title=settings.api_name,
+    version=settings.api_version,
+    description=settings.api_description,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    swagger_ui_parameters={
+        "defaultModelsExpandDepth": -1,  # No expandir modelos por defecto
+        "defaultModelExpandDepth": -1,   # No expandir detalles de modelos
+        "displayRequestDuration": True,  # Mostrar duración de requests
+        "tryItOutEnabled": True,         # Habilitar try it out
+        "filter": True                   # Habilitar filtro de endpoints
+    }
 )
 
-# Dependencia para manejar la sesión de BD
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Agregar middleware
+add_cors_middleware(app)
+
+# Incluir routers públicos
+app.include_router(
+    general.router,
+    prefix="/api/public"
+)
+
+# Incluir routers privados
+app.include_router(
+    aire.router,
+    prefix="/api/private"
+)
+
+app.include_router(
+    agua.router,
+    prefix="/api/private"
+)
+
+# Ruta raíz
+@app.get("/")
+async def root():
+    return {
+        "message": "Observatorio Ambiental API",
+        "version": settings.api_version,
+        "docs": "/docs"
+    }

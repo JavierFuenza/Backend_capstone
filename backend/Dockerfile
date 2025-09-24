@@ -21,5 +21,5 @@ COPY ./app .
 # Exponemos el puerto
 EXPOSE 8000
 
-# Comando de arranque
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Comando de arranque optimizado
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--reload"]
