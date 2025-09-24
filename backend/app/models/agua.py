@@ -42,7 +42,7 @@ class ColiformesFecalesEnMatrizBiologica(Base):
 
     dia = Column(String)
     estaciones_poal = Column(String)
-    value = Column(BigInteger)          # en tu esquema aparece como int8
+    value = Column(BigInteger)          
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -56,7 +56,7 @@ class ColiformesFecalesEnMatrizAcuosa(Base):
 
     dia = Column(String)
     estaciones_poal = Column(String)
-    value = Column(Float)               # en tu esquema aparece como float8
+    value = Column(Float)               
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -75,7 +75,7 @@ class MetalesTotalesEnLaMatrizSedimentaria(Base):
     dia = Column(String)
     estaciones_poal = Column(String)
     parametros_poal = Column(String)
-    value = Column(Float)               # float8
+    value = Column(Float)              
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -91,7 +91,7 @@ class MetalesDisueltosEnLaMatrizAcuosa(Base):
     dia = Column(String)
     estaciones_poal = Column(String)
     parametros_poal = Column(String)
-    value = Column(Float)               # float8
+    value = Column(Float)              
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -110,7 +110,7 @@ class CaudalMedioDeAguasCorrientes(Base):
     dti_cl_aguas_corrientes = Column(String)
     aguas_corrientes = Column(String)
     estaciones_fluviometricas = Column(String)
-    value = Column(Float)               # float8
+    value = Column(Float)              
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -127,7 +127,7 @@ class CantidadDeAguaCaida(Base):
 
     mes = Column(String)
     estaciones_meteorologicas_dmc = Column(String)
-    value = Column(Float)               # float8
+    value = Column(Float)              
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -142,7 +142,7 @@ class EvaporacionRealPorEstacion(Base):
 
     mes = Column(String)
     estacion = Column(String)
-    value = Column(Float)               # float8
+    value = Column(Float)              
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -159,7 +159,7 @@ class VolumenDelEmbalsePorEmbalse(Base):
 
     mes = Column(String)
     embalse = Column(String)
-    value = Column(Float)               # float8
+    value = Column(Float)              
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -176,7 +176,7 @@ class AlturaNieveEquivalenteEnAgua(Base):
 
     dia = Column(String)
     estaciones_nivometricas = Column(String)
-    value = Column(BigInteger)          # en tu esquema aparece como int8
+    value = Column(BigInteger)          
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
 
@@ -191,6 +191,6 @@ class NivelEstaticoDeAguasSubterraneas(Base):
 
     dia = Column(String)
     estaciones_pozo = Column(String)
-    value = Column(Float)               # float8
+    value = Column(Float)              
     flag_codes = Column(BigInteger)
     flags = Column(BigInteger)
