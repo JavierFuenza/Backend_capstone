@@ -7,25 +7,53 @@ from core.dependencies import get_db
 from models.agua import *
 from schemas.agua import *
 
-router = APIRouter(
-    prefix="/agua",
-    tags=["Agua"],
+# Crear sub-routers para organizar endpoints por categoría
+vistas_router = APIRouter(
+    prefix="/agua/vistas",
+    tags=["Agua - Vistas Generales"],
     responses={404: {"description": "No encontrado"}}
 )
+
+contaminantes_router = APIRouter(
+    prefix="/agua/contaminantes",
+    tags=["Agua - Contaminantes"],
+    responses={404: {"description": "No encontrado"}}
+)
+
+hidrologia_router = APIRouter(
+    prefix="/agua/hidrologia",
+    tags=["Agua - Hidrología"],
+    responses={404: {"description": "No encontrado"}}
+)
+
+meteorologicos_router = APIRouter(
+    prefix="/agua/meteorologicos",
+    tags=["Agua - Meteorológicos"],
+    responses={404: {"description": "No encontrado"}}
+)
+
+almacenamiento_router = APIRouter(
+    prefix="/agua/almacenamiento",
+    tags=["Agua - Almacenamiento"],
+    responses={404: {"description": "No encontrado"}}
+)
+
+# Router principal para incluir en main.py
+router = APIRouter()
 
 # ============================
 # Vistas (devuelven toda la tabla)
 # ============================
 
-@router.get("/mar-mensual", response_model=List[MarMensualSchema])
+@vistas_router.get("/mar-mensual", response_model=List[MarMensualSchema])
 async def get_mar_mensual(db: Session = Depends(get_db)):
-    """Obtener todos los datos mensuales del mar"""
+    """Obtener todos los datos mensuales del mar - Vista completa"""
     data = db.query(VMarMensual).all()
     return data
 
-@router.get("/glaciares-anual-cuenca", response_model=List[GlaciaresAnualCuencaSchema])
+@vistas_router.get("/glaciares-anual-cuenca", response_model=List[GlaciaresAnualCuencaSchema])
 async def get_glaciares_anual_cuenca(db: Session = Depends(get_db)):
-    """Obtener todos los datos anuales de glaciares por cuenca"""
+    """Obtener todos los datos anuales de glaciares por cuenca - Vista completa"""
     data = db.query(VGlaciaresAnualCuenca).all()
     return data
 
@@ -33,9 +61,9 @@ async def get_glaciares_anual_cuenca(db: Session = Depends(get_db)):
 # Tablas (solo campos específicos)
 # ============================
 
-@router.get("/coliformes-biologica", response_model=List[ColiformesBiologicaSchema])
+@contaminantes_router.get("/coliformes-biologica", response_model=List[ColiformesBiologicaSchema])
 async def get_coliformes_biologica(db: Session = Depends(get_db)):
-    """Obtener coliformes fecales en matriz biológica - solo campos esenciales"""
+    """Coliformes fecales en matriz biológica por estación POAL y fecha"""
     data = db.query(
         ColiformesFecalesEnMatrizBiologica.dia,
         ColiformesFecalesEnMatrizBiologica.estaciones_poal,
@@ -43,9 +71,9 @@ async def get_coliformes_biologica(db: Session = Depends(get_db)):
     ).all()
     return [{"dia": row[0], "estaciones_poal": row[1], "value": row[2]} for row in data]
 
-@router.get("/coliformes-acuosa", response_model=List[ColiformesAcuosaSchema])
+@contaminantes_router.get("/coliformes-acuosa", response_model=List[ColiformesAcuosaSchema])
 async def get_coliformes_acuosa(db: Session = Depends(get_db)):
-    """Obtener coliformes fecales en matriz acuosa - solo campos esenciales"""
+    """Coliformes fecales en matriz acuosa por estación POAL y fecha"""
     data = db.query(
         ColiformesFecalesEnMatrizAcuosa.dia,
         ColiformesFecalesEnMatrizAcuosa.estaciones_poal,
@@ -53,9 +81,9 @@ async def get_coliformes_acuosa(db: Session = Depends(get_db)):
     ).all()
     return [{"dia": row[0], "estaciones_poal": row[1], "value": row[2]} for row in data]
 
-@router.get("/metales-sedimentaria", response_model=List[MetalesSedimentariaSchema])
+@contaminantes_router.get("/metales-sedimentaria", response_model=List[MetalesSedimentariaSchema])
 async def get_metales_sedimentaria(db: Session = Depends(get_db)):
-    """Obtener metales totales en matriz sedimentaria - solo campos esenciales"""
+    """Metales totales en matriz sedimentaria por tipo de metal y estación"""
     data = db.query(
         MetalesTotalesEnLaMatrizSedimentaria.dia,
         MetalesTotalesEnLaMatrizSedimentaria.estaciones_poal,
@@ -64,9 +92,9 @@ async def get_metales_sedimentaria(db: Session = Depends(get_db)):
     ).all()
     return [{"dia": row[0], "estaciones_poal": row[1], "parametros_poal": row[2], "value": row[3]} for row in data]
 
-@router.get("/metales-acuosa", response_model=List[MetalesAcuosaSchema])
+@contaminantes_router.get("/metales-acuosa", response_model=List[MetalesAcuosaSchema])
 async def get_metales_acuosa(db: Session = Depends(get_db)):
-    """Obtener metales disueltos en matriz acuosa - solo campos esenciales"""
+    """Metales disueltos en matriz acuosa por tipo de metal y estación"""
     data = db.query(
         MetalesDisueltosEnLaMatrizAcuosa.dia,
         MetalesDisueltosEnLaMatrizAcuosa.estaciones_poal,
@@ -75,9 +103,9 @@ async def get_metales_acuosa(db: Session = Depends(get_db)):
     ).all()
     return [{"dia": row[0], "estaciones_poal": row[1], "parametros_poal": row[2], "value": row[3]} for row in data]
 
-@router.get("/caudal", response_model=List[CaudalSchema])
+@hidrologia_router.get("/caudal", response_model=List[CaudalSchema])
 async def get_caudal(db: Session = Depends(get_db)):
-    """Obtener caudal medio de aguas corrientes - solo campos esenciales"""
+    """Caudal medio mensual de aguas corrientes por estación fluviométrica"""
     data = db.query(
         CaudalMedioDeAguasCorrientes.mes,
         CaudalMedioDeAguasCorrientes.aguas_corrientes,
@@ -86,9 +114,19 @@ async def get_caudal(db: Session = Depends(get_db)):
     ).all()
     return [{"mes": row[0], "aguas_corrientes": row[1], "estaciones_fluviometricas": row[2], "value": row[3]} for row in data]
 
-@router.get("/lluvia", response_model=List[LluviaSchema])
+@hidrologia_router.get("/pozos", response_model=List[PozoSchema])
+async def get_pozos(db: Session = Depends(get_db)):
+    """Nivel estático de aguas subterráneas por estación de pozo"""
+    data = db.query(
+        NivelEstaticoDeAguasSubterraneas.dia,
+        NivelEstaticoDeAguasSubterraneas.estaciones_pozo,
+        NivelEstaticoDeAguasSubterraneas.value
+    ).all()
+    return [{"dia": row[0], "estaciones_pozo": row[1], "value": row[2]} for row in data]
+
+@meteorologicos_router.get("/lluvia", response_model=List[LluviaSchema])
 async def get_lluvia(db: Session = Depends(get_db)):
-    """Obtener cantidad de agua caída - solo campos esenciales"""
+    """Precipitación mensual por estación meteorológica DMC"""
     data = db.query(
         CantidadDeAguaCaida.mes,
         CantidadDeAguaCaida.estaciones_meteorologicas_dmc,
@@ -96,9 +134,9 @@ async def get_lluvia(db: Session = Depends(get_db)):
     ).all()
     return [{"mes": row[0], "estaciones_meteorologicas_dmc": row[1], "value": row[2]} for row in data]
 
-@router.get("/evaporacion", response_model=List[EvaporacionSchema])
+@meteorologicos_router.get("/evaporacion", response_model=List[EvaporacionSchema])
 async def get_evaporacion(db: Session = Depends(get_db)):
-    """Obtener evaporación real por estación - solo campos esenciales"""
+    """Evaporación real mensual por estación meteorológica"""
     data = db.query(
         EvaporacionRealPorEstacion.mes,
         EvaporacionRealPorEstacion.estacion,
@@ -106,19 +144,9 @@ async def get_evaporacion(db: Session = Depends(get_db)):
     ).all()
     return [{"mes": row[0], "estacion": row[1], "value": row[2]} for row in data]
 
-@router.get("/embalses", response_model=List[EmbalseSchema])
-async def get_embalses(db: Session = Depends(get_db)):
-    """Obtener volumen del embalse por embalse - solo campos esenciales"""
-    data = db.query(
-        VolumenDelEmbalsePorEmbalse.mes,
-        VolumenDelEmbalsePorEmbalse.embalse,
-        VolumenDelEmbalsePorEmbalse.value
-    ).all()
-    return [{"mes": row[0], "embalse": row[1], "value": row[2]} for row in data]
-
-@router.get("/nieve", response_model=List[NieveSchema])
+@meteorologicos_router.get("/nieve", response_model=List[NieveSchema])
 async def get_nieve(db: Session = Depends(get_db)):
-    """Obtener altura nieve equivalente en agua - solo campos esenciales"""
+    """Altura de nieve equivalente en agua por estación nivométrica"""
     data = db.query(
         AlturaNieveEquivalenteEnAgua.dia,
         AlturaNieveEquivalenteEnAgua.estaciones_nivometricas,
@@ -126,12 +154,19 @@ async def get_nieve(db: Session = Depends(get_db)):
     ).all()
     return [{"dia": row[0], "estaciones_nivometricas": row[1], "value": row[2]} for row in data]
 
-@router.get("/pozos", response_model=List[PozoSchema])
-async def get_pozos(db: Session = Depends(get_db)):
-    """Obtener nivel estático de aguas subterráneas - solo campos esenciales"""
+@almacenamiento_router.get("/embalses", response_model=List[EmbalseSchema])
+async def get_embalses(db: Session = Depends(get_db)):
+    """Volumen mensual almacenado por embalse en todo Chile"""
     data = db.query(
-        NivelEstaticoDeAguasSubterraneas.dia,
-        NivelEstaticoDeAguasSubterraneas.estaciones_pozo,
-        NivelEstaticoDeAguasSubterraneas.value
+        VolumenDelEmbalsePorEmbalse.mes,
+        VolumenDelEmbalsePorEmbalse.embalse,
+        VolumenDelEmbalsePorEmbalse.value
     ).all()
-    return [{"dia": row[0], "estaciones_pozo": row[1], "value": row[2]} for row in data]
+    return [{"mes": row[0], "embalse": row[1], "value": row[2]} for row in data]
+
+# Incluir sub-routers en el router principal
+router.include_router(vistas_router)
+router.include_router(contaminantes_router)
+router.include_router(hidrologia_router)
+router.include_router(meteorologicos_router)
+router.include_router(almacenamiento_router)
