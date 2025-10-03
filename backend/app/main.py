@@ -4,7 +4,7 @@ from core.config import settings
 from core.database import Base, engine
 from middleware.cors import add_cors_middleware
 from routers.public import general
-from routers.private import aire, agua
+from routers.private import aire, agua, estaciones, entidades_agua
 
 # Crear tablas si no existen (comentar en producción para mejor performance)
 # Base.metadata.create_all(bind=engine)
@@ -42,6 +42,16 @@ app.include_router(
 
 app.include_router(
     agua.router,
+    prefix="/api/private"
+)
+
+app.include_router(
+    estaciones.router,
+    prefix="/api/private"
+)
+
+app.include_router(
+    entidades_agua.router,
     prefix="/api/private"
 )
 

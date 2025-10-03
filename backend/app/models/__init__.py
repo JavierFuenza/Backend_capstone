@@ -24,8 +24,14 @@ from .agua import (
     AlturaNieveEquivalenteEnAgua,
     NivelEstaticoDeAguasSubterraneas,
 )
+from .estaciones import Estacion
+from .entidades_agua import EntidadAgua
 
 __all__ = [
+    # ESTACIONES
+    "Estacion",
+    "EntidadAgua",
+
     # AIRE
     "VTemperatura",
     "VHumedadRadiacionUV",
