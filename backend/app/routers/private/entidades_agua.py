@@ -15,47 +15,116 @@ router = APIRouter(
 @router.get("/", response_model=List[EntidadAguaSchema])
 async def get_all_entidades_agua(db: Session = Depends(get_db)):
     """
-    Obtener todas las entidades de agua (estaciones, cuencas, embalses, etc.)
+    Obtener todas las entidades de agua registradas en el sistema.
+
+    Este endpoint retorna un listado completo de todas las entidades hídricas,
+    incluyendo estaciones de monitoreo, cuencas, embalses, pozos, ríos, etc.
+
+    Returns:
+        List[EntidadAguaSchema]: Lista de entidades ordenadas por tipo y nombre
+
+    Ejemplo de respuesta:
+        [
+            {
+                "id": 1,
+                "nombre": "Estación Mapocho Alto",
+                "tipo": "estacion",
+                "descripcion": "Estación de monitoreo en cuenca alta",
+                "created_at": "2024-01-15T10:30:00",
+                "updated_at": "2024-01-15T10:30:00"
+            }
+        ]
     """
-    entidades = db.query(EntidadAgua).order_by(EntidadAgua.subtipo, EntidadAgua.nombre).all()
+    entidades = db.query(EntidadAgua).order_by(EntidadAgua.tipo, EntidadAgua.nombre).all()
     return entidades
 
-@router.get("/subtipo/{subtipo}", response_model=List[EntidadAguaSchema])
-async def get_entidades_by_subtipo(
-    subtipo: str,
+@router.get("/tipo/{tipo}", response_model=List[EntidadAguaSchema])
+async def get_entidades_by_tipo(
+    tipo: str,
     db: Session = Depends(get_db)
 ):
     """
-    Obtener todas las entidades de agua de un subtipo específico
+    Obtener entidades de agua filtradas por tipo específico.
 
-    Ejemplos de subtipos:
-    - estacion
-    - cuenca
-    - embalse
-    - pozo
-    - rio
-    - etc.
+    Permite filtrar las entidades hídricas según su clasificación (tipo).
+    Útil para obtener solo estaciones, cuencas, embalses, etc.
+
+    Args:
+        tipo (str): Tipo de entidad a filtrar
+
+    Tipos disponibles:
+        - estacion: Estaciones de monitoreo
+        - cuenca: Cuencas hidrográficas
+        - embalse: Embalses y represas
+        - pozo: Pozos de agua subterránea
+        - rio: Ríos y afluentes
+        - lago: Lagos y lagunas
+        - canal: Canales de riego o distribución
+
+    Returns:
+        List[EntidadAguaSchema]: Lista de entidades del tipo especificado, ordenadas por nombre
+
+    Raises:
+        HTTPException 404: Si no existen entidades del tipo solicitado
+
+    Ejemplo de uso:
+        GET /entidades-agua/tipo/estacion
+
+    Ejemplo de respuesta:
+        [
+            {
+                "id": 5,
+                "nombre": "Estación Río Maipo",
+                "tipo": "estacion",
+                "descripcion": "Monitoreo de caudal y calidad",
+                "created_at": "2024-02-01T08:00:00",
+                "updated_at": "2024-02-01T08:00:00"
+            }
+        ]
     """
     entidades = db.query(EntidadAgua).filter(
-        EntidadAgua.subtipo == subtipo
+        EntidadAgua.tipo == tipo
     ).order_by(EntidadAgua.nombre).all()
 
     if not entidades:
         raise HTTPException(
             status_code=404,
-            detail=f"No se encontraron entidades del subtipo '{subtipo}'"
+            detail=f"No se encontraron entidades del tipo '{tipo}'"
         )
 
     return entidades
 
-@router.get("/subtipos", response_model=List[str])
-async def get_subtipos_disponibles(db: Session = Depends(get_db)):
+@router.get("/tipos", response_model=List[str])
+async def get_tipos_disponibles(db: Session = Depends(get_db)):
     """
-    Obtener lista de todos los subtipos disponibles en la tabla
+    Obtener catálogo de todos los tipos de entidades de agua disponibles.
 
-    Útil para:
-    - Poblar dropdowns/selects en el frontend
-    - Conocer qué tipos de entidades existen en la base de datos
+    Este endpoint retorna una lista única de todos los tipos de entidades
+    que están actualmente registrados en la base de datos, sin duplicados.
+
+    Returns:
+        List[str]: Lista de tipos únicos, ordenados alfabéticamente
+
+    Casos de uso:
+        - Poblar dropdowns/selects dinámicos en el frontend
+        - Validar tipos antes de crear nuevas entidades
+        - Conocer la taxonomía de entidades hídricas disponibles
+        - Generar filtros dinámicos en interfaces de usuario
+
+    Ejemplo de respuesta:
+        [
+            "canal",
+            "cuenca",
+            "embalse",
+            "estacion",
+            "lago",
+            "pozo",
+            "rio"
+        ]
+
+    Note:
+        La lista se genera dinámicamente basándose en los datos existentes,
+        por lo que puede variar según el contenido de la base de datos.
     """
-    subtipos = db.query(EntidadAgua.subtipo).distinct().order_by(EntidadAgua.subtipo).all()
-    return [subtipo[0] for subtipo in subtipos]
+    tipos = db.query(EntidadAgua.tipo).distinct().order_by(EntidadAgua.tipo).all()
+    return [tipo[0] for tipo in tipos]

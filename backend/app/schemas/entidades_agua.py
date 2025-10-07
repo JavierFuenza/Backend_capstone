@@ -4,7 +4,7 @@ from datetime import datetime
 
 class EntidadAguaBase(BaseModel):
     nombre: str = Field(..., description="Nombre de la entidad de agua")
-    subtipo: str = Field(..., description="Subtipo: estacion, cuenca, embalse, etc.")
+    tipo: str = Field(..., description="Tipo: estacion, cuenca, embalse, etc.")
     descripcion: Optional[str] = Field(None, description="Descripción de la entidad")
 
 class EntidadAguaSchema(EntidadAguaBase):
