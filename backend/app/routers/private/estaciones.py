@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from core.dependencies import get_db
 from models.estaciones import Estacion
@@ -13,9 +13,17 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=List[EstacionSchema])
-async def get_all_estaciones(db: Session = Depends(get_db)):
-    """Obtener todas las estaciones con coordenadas"""
-    estaciones = db.query(Estacion).order_by(Estacion.nombre).all()
+async def get_all_estaciones(
+    db: Session = Depends(get_db),
+    numero_region: Optional[int] = Query(None, description="Filtrar por número de región")
+):
+    """Obtener todas las estaciones. Opcionalmente filtrar por región."""
+    query = db.query(Estacion)
+
+    if numero_region is not None:
+        query = query.filter(Estacion.numero_region == numero_region)
+
+    estaciones = query.order_by(Estacion.nombre).all()
     return estaciones
 
 @router.get("/{estacion_id}", response_model=EstacionSchema)

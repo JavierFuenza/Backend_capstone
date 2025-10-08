@@ -10,5 +10,7 @@ class Estacion(Base):
     nombre = Column(String(255), unique=True, nullable=False, index=True)
     latitud = Column(Float, nullable=False)
     longitud = Column(Float, nullable=False)
+    numero_region = Column(Integer, nullable=False)
+    nombre_region = Column(String(100), nullable=False)
     descripcion = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
