@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class EstacionBase(BaseModel):
@@ -20,3 +20,28 @@ class EstacionSchema(EstacionBase):
 class EstacionCreate(EstacionBase):
     """Schema para crear nuevas estaciones (si lo necesitas en el futuro)"""
     pass
+
+class RegionSchema(BaseModel):
+    numero_region: int = Field(..., description="Número de la región")
+    nombre_region: str = Field(..., description="Nombre de la región")
+
+    class Config:
+        from_attributes = True
+
+class EstacionMetricasSchema(BaseModel):
+    id: int = Field(..., description="ID de la estación")
+    nombre: str = Field(..., description="Nombre de la estación")
+    descripcion: Optional[str] = Field(None, description="Descripción de la estación")
+    metricas_disponibles: List[str] = Field(..., description="Lista de categorías de métricas disponibles")
+
+    class Config:
+        from_attributes = True
+
+class EstacionSubmetricasSchema(BaseModel):
+    id: int = Field(..., description="ID de la estación")
+    nombre: str = Field(..., description="Nombre de la estación")
+    metrica: str = Field(..., description="Categoría de métrica consultada")
+    submetricas_disponibles: List[str] = Field(..., description="Lista de submmétricas específicas disponibles")
+
+    class Config:
+        from_attributes = True
