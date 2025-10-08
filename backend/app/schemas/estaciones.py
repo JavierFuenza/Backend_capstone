@@ -45,3 +45,16 @@ class EstacionSubmetricasSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class RegistroSubmetricaSchema(BaseModel):
+    periodo: str = Field(..., description="Mes o año del registro (ej: '2023-01' o '2023')")
+    valor: Optional[float] = Field(None, description="Valor de la submétrica")
+
+class DatosSubmetricaSchema(BaseModel):
+    id: int = Field(..., description="ID de la estación")
+    nombre: str = Field(..., description="Nombre de la estación")
+    submetrica: str = Field(..., description="Nombre de la submétrica consultada")
+    datos: List[RegistroSubmetricaSchema] = Field(..., description="Lista de registros históricos")
+
+    class Config:
+        from_attributes = True

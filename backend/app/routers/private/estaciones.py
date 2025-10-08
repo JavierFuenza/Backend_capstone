@@ -12,7 +12,7 @@ from models.aire import (
     VNo2Anual, VNo2Mensual, VCoAnual, VCoMensual,
     VNoAnual, VNoMensual, VNoxAnual, VNoxMensual
 )
-from schemas.estaciones import EstacionSchema, RegionSchema, EstacionMetricasSchema, EstacionSubmetricasSchema
+from schemas.estaciones import EstacionSchema, RegionSchema, EstacionMetricasSchema, EstacionSubmetricasSchema, DatosSubmetricaSchema
 
 router = APIRouter(
     prefix="/estaciones",
@@ -605,6 +605,581 @@ async def get_estacion_submetricas(
         "nombre": estacion.nombre,
         "metrica": metrica,
         "submetricas_disponibles": submetricas
+    }
+
+@router.get("/datos-submetrica", response_model=DatosSubmetricaSchema)
+async def get_datos_submetrica(
+    db: Session = Depends(get_db),
+    submetrica: str = Query(..., description="Nombre exacto de la submétrica"),
+    estacion_id: Optional[int] = Query(None, description="ID de la estación"),
+    nombre: Optional[str] = Query(None, description="Nombre de la estación")
+):
+    """Obtener datos históricos de una submétrica específica para graficar"""
+
+    # Validar que se proporcione al menos un parámetro de estación
+    if not estacion_id and not nombre:
+        raise HTTPException(
+            status_code=400,
+            detail="Debe proporcionar 'estacion_id' o 'nombre'"
+        )
+
+    # Buscar la estación
+    query = db.query(Estacion)
+    if estacion_id:
+        query = query.filter(Estacion.id == estacion_id)
+    else:
+        query = query.filter(Estacion.nombre == nombre)
+
+    estacion = query.first()
+    if not estacion:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Estación no encontrada"
+        )
+
+    datos = []
+
+    # ====================
+    # TEMPERATURA
+    # ====================
+    if submetrica == "Temperatura Máxima Absoluta":
+        registros = db.query(VTemperatura.mes, VTemperatura.temp_max_absoluta).filter(
+            VTemperatura.estacion == estacion.nombre,
+            VTemperatura.temp_max_absoluta.isnot(None)
+        ).order_by(VTemperatura.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.temp_max_absoluta)} for r in registros]
+
+    elif submetrica == "Temperatura Mínima Absoluta":
+        registros = db.query(VTemperatura.mes, VTemperatura.temp_min_absoluta).filter(
+            VTemperatura.estacion == estacion.nombre,
+            VTemperatura.temp_min_absoluta.isnot(None)
+        ).order_by(VTemperatura.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.temp_min_absoluta)} for r in registros]
+
+    elif submetrica == "Temperatura Máxima Media":
+        registros = db.query(VTemperatura.mes, VTemperatura.temp_max_med).filter(
+            VTemperatura.estacion == estacion.nombre,
+            VTemperatura.temp_max_med.isnot(None)
+        ).order_by(VTemperatura.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.temp_max_med)} for r in registros]
+
+    elif submetrica == "Temperatura Mínima Media":
+        registros = db.query(VTemperatura.mes, VTemperatura.temp_min_med).filter(
+            VTemperatura.estacion == estacion.nombre,
+            VTemperatura.temp_min_med.isnot(None)
+        ).order_by(VTemperatura.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.temp_min_med)} for r in registros]
+
+    elif submetrica == "Temperatura Media":
+        registros = db.query(VTemperatura.mes, VTemperatura.temp_med).filter(
+            VTemperatura.estacion == estacion.nombre,
+            VTemperatura.temp_med.isnot(None)
+        ).order_by(VTemperatura.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.temp_med)} for r in registros]
+
+    # ====================
+    # HUMEDAD, RADIACIÓN Y UV
+    # ====================
+    elif submetrica == "Humedad Relativa Media Mensual":
+        registros = db.query(VHumedadRadiacionUV.mes, VHumedadRadiacionUV.humedad_rel_med_mens).filter(
+            VHumedadRadiacionUV.estacion == estacion.nombre,
+            VHumedadRadiacionUV.humedad_rel_med_mens.isnot(None)
+        ).order_by(VHumedadRadiacionUV.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.humedad_rel_med_mens)} for r in registros]
+
+    elif submetrica == "Radiación Global Media":
+        registros = db.query(VHumedadRadiacionUV.mes, VHumedadRadiacionUV.rad_global_med).filter(
+            VHumedadRadiacionUV.estacion == estacion.nombre,
+            VHumedadRadiacionUV.rad_global_med.isnot(None)
+        ).order_by(VHumedadRadiacionUV.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.rad_global_med)} for r in registros]
+
+    elif submetrica == "UVB Promedio":
+        registros = db.query(VHumedadRadiacionUV.mes, VHumedadRadiacionUV.uvb_prom).filter(
+            VHumedadRadiacionUV.estacion == estacion.nombre,
+            VHumedadRadiacionUV.uvb_prom.isnot(None)
+        ).order_by(VHumedadRadiacionUV.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.uvb_prom)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - MP2.5
+    # ====================
+    elif submetrica == "MP2.5 - Máximo Horario Anual":
+        registros = db.query(VMp25Anual.anio, VMp25Anual.mp25_max_hor_anual).filter(
+            VMp25Anual.estacion == estacion.nombre,
+            VMp25Anual.mp25_max_hor_anual.isnot(None)
+        ).order_by(VMp25Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp25_max_hor_anual)} for r in registros]
+
+    elif submetrica == "MP2.5 - Mínimo Horario Anual":
+        registros = db.query(VMp25Anual.anio, VMp25Anual.mp25_min_hor_anual).filter(
+            VMp25Anual.estacion == estacion.nombre,
+            VMp25Anual.mp25_min_hor_anual.isnot(None)
+        ).order_by(VMp25Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp25_min_hor_anual)} for r in registros]
+
+    elif submetrica == "MP2.5 - Percentil 50":
+        registros = db.query(VMp25Anual.anio, VMp25Anual.mp25_perc50).filter(
+            VMp25Anual.estacion == estacion.nombre,
+            VMp25Anual.mp25_perc50.isnot(None)
+        ).order_by(VMp25Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp25_perc50)} for r in registros]
+
+    elif submetrica == "MP2.5 - Percentil 90":
+        registros = db.query(VMp25Anual.anio, VMp25Anual.mp25_perc90).filter(
+            VMp25Anual.estacion == estacion.nombre,
+            VMp25Anual.mp25_perc90.isnot(None)
+        ).order_by(VMp25Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp25_perc90)} for r in registros]
+
+    elif submetrica == "MP2.5 - Percentil 95":
+        registros = db.query(VMp25Anual.anio, VMp25Anual.mp25_perc95).filter(
+            VMp25Anual.estacion == estacion.nombre,
+            VMp25Anual.mp25_perc95.isnot(None)
+        ).order_by(VMp25Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp25_perc95)} for r in registros]
+
+    elif submetrica == "MP2.5 - Percentil 98":
+        registros = db.query(VMp25Anual.anio, VMp25Anual.mp25_perc98).filter(
+            VMp25Anual.estacion == estacion.nombre,
+            VMp25Anual.mp25_perc98.isnot(None)
+        ).order_by(VMp25Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp25_perc98)} for r in registros]
+
+    elif submetrica == "MP2.5 - Media Mensual":
+        registros = db.query(VMp25Mensual.mes, VMp25Mensual.mp25_med_mens).filter(
+            VMp25Mensual.estacion == estacion.nombre,
+            VMp25Mensual.mp25_med_mens.isnot(None)
+        ).order_by(VMp25Mensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.mp25_med_mens)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - MP10
+    # ====================
+    elif submetrica == "MP10 - Máximo Horario Anual":
+        registros = db.query(VMp10Anual.anio, VMp10Anual.mp10_max_hor_anual).filter(
+            VMp10Anual.estacion == estacion.nombre,
+            VMp10Anual.mp10_max_hor_anual.isnot(None)
+        ).order_by(VMp10Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp10_max_hor_anual)} for r in registros]
+
+    elif submetrica == "MP10 - Mínimo Horario Anual":
+        registros = db.query(VMp10Anual.anio, VMp10Anual.mp10_min_hor_anual).filter(
+            VMp10Anual.estacion == estacion.nombre,
+            VMp10Anual.mp10_min_hor_anual.isnot(None)
+        ).order_by(VMp10Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp10_min_hor_anual)} for r in registros]
+
+    elif submetrica == "MP10 - Percentil 50":
+        registros = db.query(VMp10Anual.anio, VMp10Anual.mp10_perc50).filter(
+            VMp10Anual.estacion == estacion.nombre,
+            VMp10Anual.mp10_perc50.isnot(None)
+        ).order_by(VMp10Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp10_perc50)} for r in registros]
+
+    elif submetrica == "MP10 - Percentil 90":
+        registros = db.query(VMp10Anual.anio, VMp10Anual.mp10_perc90).filter(
+            VMp10Anual.estacion == estacion.nombre,
+            VMp10Anual.mp10_perc90.isnot(None)
+        ).order_by(VMp10Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp10_perc90)} for r in registros]
+
+    elif submetrica == "MP10 - Percentil 95":
+        registros = db.query(VMp10Anual.anio, VMp10Anual.mp10_perc95).filter(
+            VMp10Anual.estacion == estacion.nombre,
+            VMp10Anual.mp10_perc95.isnot(None)
+        ).order_by(VMp10Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp10_perc95)} for r in registros]
+
+    elif submetrica == "MP10 - Percentil 98":
+        registros = db.query(VMp10Anual.anio, VMp10Anual.mp10_perc98).filter(
+            VMp10Anual.estacion == estacion.nombre,
+            VMp10Anual.mp10_perc98.isnot(None)
+        ).order_by(VMp10Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.mp10_perc98)} for r in registros]
+
+    elif submetrica == "MP10 - Media Mensual":
+        registros = db.query(VMp10Mensual.mes, VMp10Mensual.mp10_med_mens).filter(
+            VMp10Mensual.estacion == estacion.nombre,
+            VMp10Mensual.mp10_med_mens.isnot(None)
+        ).order_by(VMp10Mensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.mp10_med_mens)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - O3 (OZONO)
+    # ====================
+    elif submetrica == "O3 - Máximo Horario Anual":
+        registros = db.query(VO3Anual.anio, VO3Anual.o3_max_hor_anual).filter(
+            VO3Anual.estacion == estacion.nombre,
+            VO3Anual.o3_max_hor_anual.isnot(None)
+        ).order_by(VO3Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.o3_max_hor_anual)} for r in registros]
+
+    elif submetrica == "O3 - Mínimo Horario Anual":
+        registros = db.query(VO3Anual.anio, VO3Anual.o3_min_hor_anual).filter(
+            VO3Anual.estacion == estacion.nombre,
+            VO3Anual.o3_min_hor_anual.isnot(None)
+        ).order_by(VO3Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.o3_min_hor_anual)} for r in registros]
+
+    elif submetrica == "O3 - Percentil 50":
+        registros = db.query(VO3Anual.anio, VO3Anual.o3_perc50).filter(
+            VO3Anual.estacion == estacion.nombre,
+            VO3Anual.o3_perc50.isnot(None)
+        ).order_by(VO3Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.o3_perc50)} for r in registros]
+
+    elif submetrica == "O3 - Percentil 90":
+        registros = db.query(VO3Anual.anio, VO3Anual.o3_perc90).filter(
+            VO3Anual.estacion == estacion.nombre,
+            VO3Anual.o3_perc90.isnot(None)
+        ).order_by(VO3Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.o3_perc90)} for r in registros]
+
+    elif submetrica == "O3 - Percentil 95":
+        registros = db.query(VO3Anual.anio, VO3Anual.o3_perc95).filter(
+            VO3Anual.estacion == estacion.nombre,
+            VO3Anual.o3_perc95.isnot(None)
+        ).order_by(VO3Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.o3_perc95)} for r in registros]
+
+    elif submetrica == "O3 - Percentil 98":
+        registros = db.query(VO3Anual.anio, VO3Anual.o3_perc98).filter(
+            VO3Anual.estacion == estacion.nombre,
+            VO3Anual.o3_perc98.isnot(None)
+        ).order_by(VO3Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.o3_perc98)} for r in registros]
+
+    elif submetrica == "O3 - Percentil 99":
+        registros = db.query(VO3Anual.anio, VO3Anual.o3_perc99).filter(
+            VO3Anual.estacion == estacion.nombre,
+            VO3Anual.o3_perc99.isnot(None)
+        ).order_by(VO3Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.o3_perc99)} for r in registros]
+
+    elif submetrica == "O3 - Media Mensual":
+        registros = db.query(VO3Mensual.mes, VO3Mensual.o3_med_mens).filter(
+            VO3Mensual.estacion == estacion.nombre,
+            VO3Mensual.o3_med_mens.isnot(None)
+        ).order_by(VO3Mensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.o3_med_mens)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - SO2 (DIÓXIDO DE AZUFRE)
+    # ====================
+    elif submetrica == "SO2 - Máximo Horario Anual":
+        registros = db.query(VSo2Anual.anio, VSo2Anual.so2_max_hor_anual).filter(
+            VSo2Anual.estacion == estacion.nombre,
+            VSo2Anual.so2_max_hor_anual.isnot(None)
+        ).order_by(VSo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.so2_max_hor_anual)} for r in registros]
+
+    elif submetrica == "SO2 - Mínimo Anual":
+        registros = db.query(VSo2Anual.anio, VSo2Anual.so2_min_anual).filter(
+            VSo2Anual.estacion == estacion.nombre,
+            VSo2Anual.so2_min_anual.isnot(None)
+        ).order_by(VSo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.so2_min_anual)} for r in registros]
+
+    elif submetrica == "SO2 - Percentil 50":
+        registros = db.query(VSo2Anual.anio, VSo2Anual.so2_perc50).filter(
+            VSo2Anual.estacion == estacion.nombre,
+            VSo2Anual.so2_perc50.isnot(None)
+        ).order_by(VSo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.so2_perc50)} for r in registros]
+
+    elif submetrica == "SO2 - Percentil 90":
+        registros = db.query(VSo2Anual.anio, VSo2Anual.so2_perc90).filter(
+            VSo2Anual.estacion == estacion.nombre,
+            VSo2Anual.so2_perc90.isnot(None)
+        ).order_by(VSo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.so2_perc90)} for r in registros]
+
+    elif submetrica == "SO2 - Percentil 95":
+        registros = db.query(VSo2Anual.anio, VSo2Anual.so2_perc95).filter(
+            VSo2Anual.estacion == estacion.nombre,
+            VSo2Anual.so2_perc95.isnot(None)
+        ).order_by(VSo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.so2_perc95)} for r in registros]
+
+    elif submetrica == "SO2 - Percentil 98":
+        registros = db.query(VSo2Anual.anio, VSo2Anual.so2_perc98).filter(
+            VSo2Anual.estacion == estacion.nombre,
+            VSo2Anual.so2_perc98.isnot(None)
+        ).order_by(VSo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.so2_perc98)} for r in registros]
+
+    elif submetrica == "SO2 - Percentil 99":
+        registros = db.query(VSo2Anual.anio, VSo2Anual.so2_perc99).filter(
+            VSo2Anual.estacion == estacion.nombre,
+            VSo2Anual.so2_perc99.isnot(None)
+        ).order_by(VSo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.so2_perc99)} for r in registros]
+
+    elif submetrica == "SO2 - Media Mensual":
+        registros = db.query(VSo2Mensual.mes, VSo2Mensual.so2_med_mens).filter(
+            VSo2Mensual.estacion == estacion.nombre,
+            VSo2Mensual.so2_med_mens.isnot(None)
+        ).order_by(VSo2Mensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.so2_med_mens)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - NO2 (DIÓXIDO DE NITRÓGENO)
+    # ====================
+    elif submetrica == "NO2 - Máximo Horario Anual":
+        registros = db.query(VNo2Anual.anio, VNo2Anual.no2_max_hor_anual).filter(
+            VNo2Anual.estacion == estacion.nombre,
+            VNo2Anual.no2_max_hor_anual.isnot(None)
+        ).order_by(VNo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no2_max_hor_anual)} for r in registros]
+
+    elif submetrica == "NO2 - Mínimo Horario Anual":
+        registros = db.query(VNo2Anual.anio, VNo2Anual.no2_min_hor_anual).filter(
+            VNo2Anual.estacion == estacion.nombre,
+            VNo2Anual.no2_min_hor_anual.isnot(None)
+        ).order_by(VNo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no2_min_hor_anual)} for r in registros]
+
+    elif submetrica == "NO2 - Percentil 50":
+        registros = db.query(VNo2Anual.anio, VNo2Anual.no2_perc50).filter(
+            VNo2Anual.estacion == estacion.nombre,
+            VNo2Anual.no2_perc50.isnot(None)
+        ).order_by(VNo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no2_perc50)} for r in registros]
+
+    elif submetrica == "NO2 - Percentil 90":
+        registros = db.query(VNo2Anual.anio, VNo2Anual.no2_perc90).filter(
+            VNo2Anual.estacion == estacion.nombre,
+            VNo2Anual.no2_perc90.isnot(None)
+        ).order_by(VNo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no2_perc90)} for r in registros]
+
+    elif submetrica == "NO2 - Percentil 95":
+        registros = db.query(VNo2Anual.anio, VNo2Anual.no2_perc95).filter(
+            VNo2Anual.estacion == estacion.nombre,
+            VNo2Anual.no2_perc95.isnot(None)
+        ).order_by(VNo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no2_perc95)} for r in registros]
+
+    elif submetrica == "NO2 - Percentil 98":
+        registros = db.query(VNo2Anual.anio, VNo2Anual.no2_perc98).filter(
+            VNo2Anual.estacion == estacion.nombre,
+            VNo2Anual.no2_perc98.isnot(None)
+        ).order_by(VNo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no2_perc98)} for r in registros]
+
+    elif submetrica == "NO2 - Percentil 99":
+        registros = db.query(VNo2Anual.anio, VNo2Anual.no2_perc99).filter(
+            VNo2Anual.estacion == estacion.nombre,
+            VNo2Anual.no2_perc99.isnot(None)
+        ).order_by(VNo2Anual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no2_perc99)} for r in registros]
+
+    elif submetrica == "NO2 - Media Mensual":
+        registros = db.query(VNo2Mensual.mes, VNo2Mensual.no2_med_mens).filter(
+            VNo2Mensual.estacion == estacion.nombre,
+            VNo2Mensual.no2_med_mens.isnot(None)
+        ).order_by(VNo2Mensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.no2_med_mens)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - CO (MONÓXIDO DE CARBONO)
+    # ====================
+    elif submetrica == "CO - Máximo Horario Anual":
+        registros = db.query(VCoAnual.anio, VCoAnual.co_max_hor_anual).filter(
+            VCoAnual.estacion == estacion.nombre,
+            VCoAnual.co_max_hor_anual.isnot(None)
+        ).order_by(VCoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.co_max_hor_anual)} for r in registros]
+
+    elif submetrica == "CO - Mínimo Horario Anual":
+        registros = db.query(VCoAnual.anio, VCoAnual.co_min_hor_anual).filter(
+            VCoAnual.estacion == estacion.nombre,
+            VCoAnual.co_min_hor_anual.isnot(None)
+        ).order_by(VCoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.co_min_hor_anual)} for r in registros]
+
+    elif submetrica == "CO - Percentil 50":
+        registros = db.query(VCoAnual.anio, VCoAnual.co_perc50).filter(
+            VCoAnual.estacion == estacion.nombre,
+            VCoAnual.co_perc50.isnot(None)
+        ).order_by(VCoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.co_perc50)} for r in registros]
+
+    elif submetrica == "CO - Percentil 90":
+        registros = db.query(VCoAnual.anio, VCoAnual.co_perc90).filter(
+            VCoAnual.estacion == estacion.nombre,
+            VCoAnual.co_perc90.isnot(None)
+        ).order_by(VCoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.co_perc90)} for r in registros]
+
+    elif submetrica == "CO - Percentil 95":
+        registros = db.query(VCoAnual.anio, VCoAnual.co_perc95).filter(
+            VCoAnual.estacion == estacion.nombre,
+            VCoAnual.co_perc95.isnot(None)
+        ).order_by(VCoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.co_perc95)} for r in registros]
+
+    elif submetrica == "CO - Percentil 98":
+        registros = db.query(VCoAnual.anio, VCoAnual.co_perc98).filter(
+            VCoAnual.estacion == estacion.nombre,
+            VCoAnual.co_perc98.isnot(None)
+        ).order_by(VCoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.co_perc98)} for r in registros]
+
+    elif submetrica == "CO - Percentil 99":
+        registros = db.query(VCoAnual.anio, VCoAnual.co_perc99).filter(
+            VCoAnual.estacion == estacion.nombre,
+            VCoAnual.co_perc99.isnot(None)
+        ).order_by(VCoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.co_perc99)} for r in registros]
+
+    elif submetrica == "CO - Media Mensual":
+        registros = db.query(VCoMensual.mes, VCoMensual.co_med_mens).filter(
+            VCoMensual.estacion == estacion.nombre,
+            VCoMensual.co_med_mens.isnot(None)
+        ).order_by(VCoMensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.co_med_mens)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - NO (MONÓXIDO DE NITRÓGENO)
+    # ====================
+    elif submetrica == "NO - Máximo Horario Anual":
+        registros = db.query(VNoAnual.anio, VNoAnual.no_max_hor_anual).filter(
+            VNoAnual.estacion == estacion.nombre,
+            VNoAnual.no_max_hor_anual.isnot(None)
+        ).order_by(VNoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no_max_hor_anual)} for r in registros]
+
+    elif submetrica == "NO - Mínimo Horario Anual":
+        registros = db.query(VNoAnual.anio, VNoAnual.no_min_hor_anual).filter(
+            VNoAnual.estacion == estacion.nombre,
+            VNoAnual.no_min_hor_anual.isnot(None)
+        ).order_by(VNoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no_min_hor_anual)} for r in registros]
+
+    elif submetrica == "NO - Percentil 50":
+        registros = db.query(VNoAnual.anio, VNoAnual.no_perc50).filter(
+            VNoAnual.estacion == estacion.nombre,
+            VNoAnual.no_perc50.isnot(None)
+        ).order_by(VNoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no_perc50)} for r in registros]
+
+    elif submetrica == "NO - Percentil 90":
+        registros = db.query(VNoAnual.anio, VNoAnual.no_perc90).filter(
+            VNoAnual.estacion == estacion.nombre,
+            VNoAnual.no_perc90.isnot(None)
+        ).order_by(VNoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no_perc90)} for r in registros]
+
+    elif submetrica == "NO - Percentil 95":
+        registros = db.query(VNoAnual.anio, VNoAnual.no_perc95).filter(
+            VNoAnual.estacion == estacion.nombre,
+            VNoAnual.no_perc95.isnot(None)
+        ).order_by(VNoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no_perc95)} for r in registros]
+
+    elif submetrica == "NO - Percentil 98":
+        registros = db.query(VNoAnual.anio, VNoAnual.no_perc98).filter(
+            VNoAnual.estacion == estacion.nombre,
+            VNoAnual.no_perc98.isnot(None)
+        ).order_by(VNoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no_perc98)} for r in registros]
+
+    elif submetrica == "NO - Percentil 99":
+        registros = db.query(VNoAnual.anio, VNoAnual.no_perc99).filter(
+            VNoAnual.estacion == estacion.nombre,
+            VNoAnual.no_perc99.isnot(None)
+        ).order_by(VNoAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.no_perc99)} for r in registros]
+
+    elif submetrica == "NO - Media Mensual":
+        registros = db.query(VNoMensual.mes, VNoMensual.no_med_mens).filter(
+            VNoMensual.estacion == estacion.nombre,
+            VNoMensual.no_med_mens.isnot(None)
+        ).order_by(VNoMensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.no_med_mens)} for r in registros]
+
+    # ====================
+    # CONTAMINANTES - NOX (ÓXIDOS DE NITRÓGENO)
+    # ====================
+    elif submetrica == "NOX - Máximo Horario Anual":
+        registros = db.query(VNoxAnual.anio, VNoxAnual.nox_max_hor_anual).filter(
+            VNoxAnual.estacion == estacion.nombre,
+            VNoxAnual.nox_max_hor_anual.isnot(None)
+        ).order_by(VNoxAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.nox_max_hor_anual)} for r in registros]
+
+    elif submetrica == "NOX - Mínimo Horario Anual":
+        registros = db.query(VNoxAnual.anio, VNoxAnual.nox_min_hor_anual).filter(
+            VNoxAnual.estacion == estacion.nombre,
+            VNoxAnual.nox_min_hor_anual.isnot(None)
+        ).order_by(VNoxAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.nox_min_hor_anual)} for r in registros]
+
+    elif submetrica == "NOX - Percentil 50":
+        registros = db.query(VNoxAnual.anio, VNoxAnual.nox_perc50).filter(
+            VNoxAnual.estacion == estacion.nombre,
+            VNoxAnual.nox_perc50.isnot(None)
+        ).order_by(VNoxAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.nox_perc50)} for r in registros]
+
+    elif submetrica == "NOX - Percentil 90":
+        registros = db.query(VNoxAnual.anio, VNoxAnual.nox_perc90).filter(
+            VNoxAnual.estacion == estacion.nombre,
+            VNoxAnual.nox_perc90.isnot(None)
+        ).order_by(VNoxAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.nox_perc90)} for r in registros]
+
+    elif submetrica == "NOX - Percentil 95":
+        registros = db.query(VNoxAnual.anio, VNoxAnual.nox_perc95).filter(
+            VNoxAnual.estacion == estacion.nombre,
+            VNoxAnual.nox_perc95.isnot(None)
+        ).order_by(VNoxAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.nox_perc95)} for r in registros]
+
+    elif submetrica == "NOX - Percentil 98":
+        registros = db.query(VNoxAnual.anio, VNoxAnual.nox_perc98).filter(
+            VNoxAnual.estacion == estacion.nombre,
+            VNoxAnual.nox_perc98.isnot(None)
+        ).order_by(VNoxAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.nox_perc98)} for r in registros]
+
+    elif submetrica == "NOX - Percentil 99":
+        registros = db.query(VNoxAnual.anio, VNoxAnual.nox_perc99).filter(
+            VNoxAnual.estacion == estacion.nombre,
+            VNoxAnual.nox_perc99.isnot(None)
+        ).order_by(VNoxAnual.anio).all()
+        datos = [{"periodo": str(r.anio), "valor": float(r.nox_perc99)} for r in registros]
+
+    elif submetrica == "NOX - Media Mensual":
+        registros = db.query(VNoxMensual.mes, VNoxMensual.nox_med_mens).filter(
+            VNoxMensual.estacion == estacion.nombre,
+            VNoxMensual.nox_med_mens.isnot(None)
+        ).order_by(VNoxMensual.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.nox_med_mens)} for r in registros]
+
+    # ====================
+    # EVENTOS DE OLAS DE CALOR
+    # ====================
+    elif submetrica == "Número de Eventos de Olas de Calor":
+        registros = db.query(VNumEventosDeOlasDeCalor.mes, VNumEventosDeOlasDeCalor.num_eventos_de_olas_de_calor).filter(
+            VNumEventosDeOlasDeCalor.estacion == estacion.nombre,
+            VNumEventosDeOlasDeCalor.num_eventos_de_olas_de_calor.isnot(None)
+        ).order_by(VNumEventosDeOlasDeCalor.mes).all()
+        datos = [{"periodo": r.mes, "valor": float(r.num_eventos_de_olas_de_calor)} for r in registros]
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Submétrica '{submetrica}' no reconocida. Verifique el nombre exacto."
+        )
+
+    return {
+        "id": estacion.id,
+        "nombre": estacion.nombre,
+        "submetrica": submetrica,
+        "datos": datos
     }
 
 @router.get("/regiones", response_model=List[RegionSchema])
