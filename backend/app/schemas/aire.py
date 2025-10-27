@@ -19,7 +19,7 @@ class HumedadRadiacionUVSchema(BaseResponse):
     mes: str
     estacion: str
     humedad_rel_med_mens: Optional[float]
-    rad_global_med: Optional[int]
+    rad_global_med: Optional[float]
     uvb_prom: Optional[float]
 
 class Mp25AnualSchema(BaseResponse):
@@ -30,7 +30,7 @@ class Mp25AnualSchema(BaseResponse):
     mp25_perc50: Optional[float]
     mp25_perc90: Optional[float]
     mp25_perc95: Optional[float]
-    mp25_perc98: Optional[int]
+    mp25_perc98: Optional[float]
 
 class Mp25MensualSchema(BaseResponse):
     mes: str
@@ -45,7 +45,7 @@ class Mp10AnualSchema(BaseResponse):
     mp10_perc50: Optional[float]
     mp10_perc90: Optional[float]
     mp10_perc95: Optional[float]
-    mp10_perc98: Optional[int]
+    mp10_perc98: Optional[float]
 
 class Mp10MensualSchema(BaseResponse):
     mes: str
@@ -56,7 +56,7 @@ class O3AnualSchema(BaseResponse):
     anio: int
     estacion: str
     o3_max_hor_anual: Optional[float]
-    o3_min_hor_anual: Optional[float]
+    o3_min_hor_anual: Optional[int]
     o3_perc50: Optional[float]
     o3_perc90: Optional[float]
     o3_perc95: Optional[float]
@@ -152,3 +152,11 @@ class OlasCalorSchema(BaseResponse):
     mes: str
     estacion: str
     num_eventos_de_olas_de_calor: Optional[int]
+
+class EstacionesSchema(BaseResponse):
+    nombre: str
+    latitud: Optional[float]
+    longitud: Optional[float]
+    numero_region: Optional[int]
+    nombre_region: Optional[str]
+    descripcion: Optional[str]

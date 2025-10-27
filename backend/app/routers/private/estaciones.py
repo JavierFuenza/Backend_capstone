@@ -23,30 +23,16 @@ router = APIRouter(
 @router.get("/metricas", response_model=EstacionMetricasSchema)
 async def get_estacion_metricas(
     db: Session = Depends(get_db),
-    estacion_id: Optional[int] = Query(None, description="ID de la estación"),
-    nombre: Optional[str] = Query(None, description="Nombre de la estación")
+    nombre: str = Query(..., description="Nombre de la estación")
 ):
-    """Obtener métricas disponibles para una estación específica (por ID o nombre)"""
-
-    # Validar que se proporcione al menos un parámetro
-    if not estacion_id and not nombre:
-        raise HTTPException(
-            status_code=400,
-            detail="Debe proporcionar 'estacion_id' o 'nombre'"
-        )
+    """Obtener métricas disponibles para una estación específica por nombre"""
 
     # Buscar la estación
-    query = db.query(Estacion)
-    if estacion_id:
-        query = query.filter(Estacion.id == estacion_id)
-    else:
-        query = query.filter(Estacion.nombre == nombre)
-
-    estacion = query.first()
+    estacion = db.query(Estacion).filter(Estacion.nombre == nombre).first()
     if not estacion:
         raise HTTPException(
             status_code=404,
-            detail=f"Estación no encontrada"
+            detail=f"Estación '{nombre}' no encontrada"
         )
 
     # Verificar qué métricas tiene disponibles
@@ -96,7 +82,6 @@ async def get_estacion_metricas(
         metricas.append("Eventos de Olas de Calor")
 
     return {
-        "id": estacion.id,
         "nombre": estacion.nombre,
         "descripcion": estacion.descripcion,
         "metricas_disponibles": metricas
@@ -106,30 +91,16 @@ async def get_estacion_metricas(
 async def get_estacion_submetricas(
     db: Session = Depends(get_db),
     metrica: str = Query(..., description="Categoría de métrica: Temperatura, Humedad Radiación y UV, Contaminantes, Eventos de Olas de Calor"),
-    estacion_id: Optional[int] = Query(None, description="ID de la estación"),
-    nombre: Optional[str] = Query(None, description="Nombre de la estación")
+    nombre: str = Query(..., description="Nombre de la estación")
 ):
     """Obtener submmétricas específicas disponibles (columnas con >= 2 registros no nulos)"""
 
-    # Validar que se proporcione al menos un parámetro de estación
-    if not estacion_id and not nombre:
-        raise HTTPException(
-            status_code=400,
-            detail="Debe proporcionar 'estacion_id' o 'nombre'"
-        )
-
     # Buscar la estación
-    query = db.query(Estacion)
-    if estacion_id:
-        query = query.filter(Estacion.id == estacion_id)
-    else:
-        query = query.filter(Estacion.nombre == nombre)
-
-    estacion = query.first()
+    estacion = db.query(Estacion).filter(Estacion.nombre == nombre).first()
     if not estacion:
         raise HTTPException(
             status_code=404,
-            detail=f"Estación no encontrada"
+            detail=f"Estación '{nombre}' no encontrada"
         )
 
     submetricas = []
@@ -601,7 +572,6 @@ async def get_estacion_submetricas(
         )
 
     return {
-        "id": estacion.id,
         "nombre": estacion.nombre,
         "metrica": metrica,
         "submetricas_disponibles": submetricas
@@ -611,30 +581,16 @@ async def get_estacion_submetricas(
 async def get_datos_submetrica(
     db: Session = Depends(get_db),
     submetrica: str = Query(..., description="Nombre exacto de la submétrica"),
-    estacion_id: Optional[int] = Query(None, description="ID de la estación"),
-    nombre: Optional[str] = Query(None, description="Nombre de la estación")
+    nombre: str = Query(..., description="Nombre de la estación")
 ):
     """Obtener datos históricos de una submétrica específica para graficar"""
 
-    # Validar que se proporcione al menos un parámetro de estación
-    if not estacion_id and not nombre:
-        raise HTTPException(
-            status_code=400,
-            detail="Debe proporcionar 'estacion_id' o 'nombre'"
-        )
-
     # Buscar la estación
-    query = db.query(Estacion)
-    if estacion_id:
-        query = query.filter(Estacion.id == estacion_id)
-    else:
-        query = query.filter(Estacion.nombre == nombre)
-
-    estacion = query.first()
+    estacion = db.query(Estacion).filter(Estacion.nombre == nombre).first()
     if not estacion:
         raise HTTPException(
             status_code=404,
-            detail=f"Estación no encontrada"
+            detail=f"Estación '{nombre}' no encontrada"
         )
 
     datos = []
@@ -1176,7 +1132,6 @@ async def get_datos_submetrica(
         )
 
     return {
-        "id": estacion.id,
         "nombre": estacion.nombre,
         "submetrica": submetrica,
         "datos": datos
@@ -1209,17 +1164,9 @@ async def get_all_estaciones(
     estaciones = query.order_by(Estacion.nombre).all()
     return estaciones
 
-@router.get("/{estacion_id}", response_model=EstacionSchema)
-async def get_estacion_by_id(estacion_id: int, db: Session = Depends(get_db)):
-    """Obtener una estación específica por ID"""
-    estacion = db.query(Estacion).filter(Estacion.id == estacion_id).first()
-    if not estacion:
-        raise HTTPException(status_code=404, detail="Estación no encontrada")
-    return estacion
-
-@router.get("/nombre/{nombre}", response_model=EstacionSchema)
+@router.get("/{nombre}", response_model=EstacionSchema)
 async def get_estacion_by_nombre(nombre: str, db: Session = Depends(get_db)):
-    """Obtener una estación específica por nombre exacto"""
+    """Obtener una estación específica por nombre"""
     estacion = db.query(Estacion).filter(Estacion.nombre == nombre).first()
     if not estacion:
         raise HTTPException(status_code=404, detail=f"Estación '{nombre}' no encontrada")

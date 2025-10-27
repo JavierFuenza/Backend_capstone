@@ -13,31 +13,31 @@ from .aire import (
 from .agua import (
     VMarMensual,
     VGlaciaresAnualCuenca,
-    ColiformesFecalesEnMatrizBiologica,
-    ColiformesFecalesEnMatrizAcuosa,
-    MetalesTotalesEnLaMatrizSedimentaria,
-    MetalesDisueltosEnLaMatrizAcuosa,
-    CaudalMedioDeAguasCorrientes,
-    CantidadDeAguaCaida,
-    EvaporacionRealPorEstacion,
-    VolumenDelEmbalsePorEmbalse,
-    AlturaNieveEquivalenteEnAgua,
-    NivelEstaticoDeAguasSubterraneas,
+    VColiformesFecalesEnMatrizBiologica,
+    VColiformesFecalesEnMatrizAcuosa,
+    VMetalesTotalesEnLaMatrizSedimentaria,
+    VMetalesDisueltosEnLaMatrizAcuosa,
+    VCaudalMedioDeAguasCorrientes,
+    VCantidadDeAguaCaida,
+    VEvaporacionRealPorEstacion,
+    VVolumenDelEmbalsePorEmbalse,
+    VAlturaNieveEquivalenteEnAgua,
+    VNivelEstaticoDeAguasSubterraneas,
 )
 from .estaciones import Estacion
 from .entidades_agua import EntidadAgua
 
 __all__ = [
-    # ESTACIONES
+    # Modelos para routers especializados (ahora apuntan a vistas)
     "Estacion",
     "EntidadAgua",
 
-    # AIRE
+    # AIRE - Vistas
     "VTemperatura",
     "VHumedadRadiacionUV",
     "VNumEventosDeOlasDeCalor",
 
-    # AIRE (Contaminantes Atmosféricos)
+    # AIRE (Contaminantes Atmosféricos) - Vistas
     "VMp25Anual", "VMp25Mensual",
     "VMp10Anual", "VMp10Mensual",
     "VO3Anual",  "VO3Mensual",
@@ -47,19 +47,19 @@ __all__ = [
     "VNoAnual", "VNoMensual",
     "VNoxAnual", "VNoxMensual",
 
-    # AGUA (Vistas Principales)
+    # AGUA - Vistas Principales
     "VMarMensual",
     "VGlaciaresAnualCuenca",
 
-    # AGUA (Tablas Base)
-    "ColiformesFecalesEnMatrizBiologica",
-    "ColiformesFecalesEnMatrizAcuosa",
-    "MetalesTotalesEnLaMatrizSedimentaria",
-    "MetalesDisueltosEnLaMatrizAcuosa",
-    "CaudalMedioDeAguasCorrientes",
-    "CantidadDeAguaCaida",
-    "EvaporacionRealPorEstacion",
-    "VolumenDelEmbalsePorEmbalse",
-    "AlturaNieveEquivalenteEnAgua",
-    "NivelEstaticoDeAguasSubterraneas",
+    # AGUA - Vistas de Datos
+    "VColiformesFecalesEnMatrizBiologica",
+    "VColiformesFecalesEnMatrizAcuosa",
+    "VMetalesTotalesEnLaMatrizSedimentaria",
+    "VMetalesDisueltosEnLaMatrizAcuosa",
+    "VCaudalMedioDeAguasCorrientes",
+    "VCantidadDeAguaCaida",
+    "VEvaporacionRealPorEstacion",
+    "VVolumenDelEmbalsePorEmbalse",
+    "VAlturaNieveEquivalenteEnAgua",
+    "VNivelEstaticoDeAguasSubterraneas",
 ]
