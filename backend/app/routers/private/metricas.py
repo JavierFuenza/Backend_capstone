@@ -20,6 +20,91 @@ router = APIRouter(
     responses={404: {"description": "No encontrado"}}
 )
 
+@router.get("/tabs/{nombre_estacion}")
+async def get_metricas_disponibles(nombre_estacion: str, db: Session = Depends(get_db)):
+    """
+    Obtener las métricas disponibles para una estación específica.
+    Retorna un array de strings con las métricas que tienen datos.
+
+    Posibles valores: 'temperatura', 'mp25', 'mp10', 'o3', 'so2', 'no2', 'co', 'otros'
+    """
+    metricas_disponibles = []
+
+    # Verificar Temperatura
+    temp_count = db.query(VTemperatura).filter(
+        VTemperatura.estacion == nombre_estacion
+    ).count()
+    if temp_count > 0:
+        metricas_disponibles.append('temperatura')
+
+    # Verificar MP2.5
+    mp25_count = db.query(VMp25Anual).filter(
+        VMp25Anual.estacion == nombre_estacion
+    ).count() + db.query(VMp25Mensual).filter(
+        VMp25Mensual.estacion == nombre_estacion
+    ).count()
+    if mp25_count > 0:
+        metricas_disponibles.append('mp25')
+
+    # Verificar MP10
+    mp10_count = db.query(VMp10Anual).filter(
+        VMp10Anual.estacion == nombre_estacion
+    ).count() + db.query(VMp10Mensual).filter(
+        VMp10Mensual.estacion == nombre_estacion
+    ).count()
+    if mp10_count > 0:
+        metricas_disponibles.append('mp10')
+
+    # Verificar O3
+    o3_count = db.query(VO3Anual).filter(
+        VO3Anual.estacion == nombre_estacion
+    ).count() + db.query(VO3Mensual).filter(
+        VO3Mensual.estacion == nombre_estacion
+    ).count()
+    if o3_count > 0:
+        metricas_disponibles.append('o3')
+
+    # Verificar SO2
+    so2_count = db.query(VSo2Anual).filter(
+        VSo2Anual.estacion == nombre_estacion
+    ).count() + db.query(VSo2Mensual).filter(
+        VSo2Mensual.estacion == nombre_estacion
+    ).count()
+    if so2_count > 0:
+        metricas_disponibles.append('so2')
+
+    # Verificar NO2
+    no2_count = db.query(VNo2Anual).filter(
+        VNo2Anual.estacion == nombre_estacion
+    ).count() + db.query(VNo2Mensual).filter(
+        VNo2Mensual.estacion == nombre_estacion
+    ).count()
+    if no2_count > 0:
+        metricas_disponibles.append('no2')
+
+    # Verificar CO
+    co_count = db.query(VCoAnual).filter(
+        VCoAnual.estacion == nombre_estacion
+    ).count() + db.query(VCoMensual).filter(
+        VCoMensual.estacion == nombre_estacion
+    ).count()
+    if co_count > 0:
+        metricas_disponibles.append('co')
+
+    # Verificar Humedad, Radiación UV y Olas de Calor
+    humedad_rad_uv_count = db.query(VHumedadRadiacionUV).filter(
+        VHumedadRadiacionUV.estacion == nombre_estacion
+    ).count() + db.query(VNumEventosDeOlasDeCalor).filter(
+        VNumEventosDeOlasDeCalor.estacion == nombre_estacion
+    ).count()
+    if humedad_rad_uv_count > 0:
+        metricas_disponibles.append('humedad_radiacion_uv')
+
+    return {
+        "estacion": nombre_estacion,
+        "metricas_disponibles": metricas_disponibles
+    }
+
 @router.get("/temperatura/{nombre_estacion}", response_model=List[TemperaturaData])
 async def get_temperatura(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de temperatura para una estación específica"""
@@ -255,8 +340,8 @@ async def get_co(nombre_estacion: str, db: Session = Depends(get_db)):
         "datos_mensuales": datos_mensuales
     }
 
-@router.get("/otros/{nombre_estacion}")
-async def get_otros(nombre_estacion: str, db: Session = Depends(get_db)):
+@router.get("/humedad_radiacion_uv/{nombre_estacion}")
+async def get_humedad_radiacion_uv(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de Humedad, Radiación UV y Olas de Calor para una estación"""
     humedad_rad_uv = db.query(VHumedadRadiacionUV).filter(
         VHumedadRadiacionUV.estacion == nombre_estacion
