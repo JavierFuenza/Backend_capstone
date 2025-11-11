@@ -70,7 +70,7 @@ async def get_mar_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** SHOA (Servicio Hidrográfico y Oceanográfico de la Armada de Chile)
     """
-    data = db.query(VMarMensual).all()
+    data = db.query(VMarMensual).order_by(VMarMensual.mes).all()
     return data
 
 @vistas_router.get(
@@ -101,7 +101,7 @@ async def get_glaciares_anual_cuenca(db: Session = Depends(get_db)):
 
     **Fuente:** DGA (Dirección General de Aguas) - Inventario Público de Glaciares
     """
-    data = db.query(VGlaciaresAnualCuenca).all()
+    data = db.query(VGlaciaresAnualCuenca).order_by(VGlaciaresAnualCuenca.anio).all()
     return data
 
 # ============================
@@ -139,7 +139,7 @@ async def get_coliformes_biologica(db: Session = Depends(get_db)):
 
     **Fuente:** Red POAL (Programa de Observación del Ambiente Litoral) - IFOP
     """
-    data = db.query(VColiformesFecalesEnMatrizBiologica).all()
+    data = db.query(VColiformesFecalesEnMatrizBiologica).order_by(VColiformesFecalesEnMatrizBiologica.dia).all()
     return data
 
 @contaminantes_router.get(
@@ -167,7 +167,7 @@ async def get_coliformes_acuosa(db: Session = Depends(get_db)):
 
     **Fuente:** Red POAL - IFOP
     """
-    data = db.query(VColiformesFecalesEnMatrizAcuosa).all()
+    data = db.query(VColiformesFecalesEnMatrizAcuosa).order_by(VColiformesFecalesEnMatrizAcuosa.dia).all()
     return data
 
 @contaminantes_router.get(
@@ -201,7 +201,7 @@ async def get_metales_sedimentaria(db: Session = Depends(get_db)):
 
     **Fuente:** Red POAL - IFOP
     """
-    data = db.query(VMetalesTotalesEnLaMatrizSedimentaria).all()
+    data = db.query(VMetalesTotalesEnLaMatrizSedimentaria).order_by(VMetalesTotalesEnLaMatrizSedimentaria.dia).all()
     return data
 
 @contaminantes_router.get(
@@ -231,7 +231,7 @@ async def get_metales_acuosa(db: Session = Depends(get_db)):
 
     **Fuente:** Red POAL - IFOP
     """
-    data = db.query(VMetalesDisueltosEnLaMatrizAcuosa).all()
+    data = db.query(VMetalesDisueltosEnLaMatrizAcuosa).order_by(VMetalesDisueltosEnLaMatrizAcuosa.dia).all()
     return data
 
 # ============================
@@ -273,7 +273,7 @@ async def get_caudal(db: Session = Depends(get_db)):
 
     **Fuente:** DGA (Dirección General de Aguas) - Red Hidrométrica Nacional
     """
-    data = db.query(VCaudalMedioDeAguasCorrientes).all()
+    data = db.query(VCaudalMedioDeAguasCorrientes).order_by(VCaudalMedioDeAguasCorrientes.mes).all()
     return data
 
 @hidrologia_router.get(
@@ -309,7 +309,7 @@ async def get_pozos(db: Session = Depends(get_db)):
 
     **Fuente:** DGA - Red de Monitoreo de Aguas Subterráneas
     """
-    data = db.query(VNivelEstaticoDeAguasSubterraneas).all()
+    data = db.query(VNivelEstaticoDeAguasSubterraneas).order_by(VNivelEstaticoDeAguasSubterraneas.dia).all()
     return data
 
 # ============================
@@ -349,7 +349,7 @@ async def get_lluvia(db: Session = Depends(get_db)):
 
     **Fuente:** DMC (Dirección Meteorológica de Chile)
     """
-    data = db.query(VCantidadDeAguaCaida).all()
+    data = db.query(VCantidadDeAguaCaida).order_by(VCantidadDeAguaCaida.mes).all()
     return data
 
 @meteorologicos_router.get(
@@ -389,7 +389,7 @@ async def get_evaporacion(db: Session = Depends(get_db)):
 
     **Fuente:** DGA / DMC
     """
-    data = db.query(VEvaporacionRealPorEstacion).all()
+    data = db.query(VEvaporacionRealPorEstacion).order_by(VEvaporacionRealPorEstacion.mes).all()
     return data
 
 @meteorologicos_router.get(
@@ -432,7 +432,7 @@ async def get_nieve(db: Session = Depends(get_db)):
 
     **Fuente:** DGA - Red Nivométrica Nacional
     """
-    data = db.query(VAlturaNieveEquivalenteEnAgua).all()
+    data = db.query(VAlturaNieveEquivalenteEnAgua).order_by(VAlturaNieveEquivalenteEnAgua.dia).all()
     return data
 
 # ============================
@@ -482,7 +482,7 @@ async def get_embalses(db: Session = Depends(get_db)):
 
     **Fuente:** DGA - Monitoreo de Embalses
     """
-    data = db.query(VVolumenDelEmbalsePorEmbalse).all()
+    data = db.query(VVolumenDelEmbalsePorEmbalse).order_by(VVolumenDelEmbalsePorEmbalse.mes).all()
     return data
 
 # Incluir sub-routers en el router principal

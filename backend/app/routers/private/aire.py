@@ -95,7 +95,7 @@ async def get_temperatura(db: Session = Depends(get_db)):
 
     **Fuente:** Estaciones meteorológicas DMC (Dirección Meteorológica de Chile)
     """
-    data = db.query(VTemperatura).all()
+    data = db.query(VTemperatura).order_by(VTemperatura.mes).all()
     return data
 
 @general_router.get(
@@ -119,7 +119,7 @@ async def get_humedad_radiacion_uv(db: Session = Depends(get_db)):
 
     **Nota:** La radiación UVB es importante para evaluar la exposición solar y riesgos para la salud.
     """
-    data = db.query(VHumedadRadiacionUV).all()
+    data = db.query(VHumedadRadiacionUV).order_by(VHumedadRadiacionUV.mes).all()
     return data
 
 # ============================
@@ -150,7 +150,7 @@ async def get_mp25_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red de Monitoreo de Calidad del Aire SINCA (Sistema de Información Nacional de Calidad del Aire)
     """
-    data = db.query(VMp25Anual).all()
+    data = db.query(VMp25Anual).order_by(VMp25Anual.anio).all()
     return data
 
 @mp25_router.get(
@@ -172,7 +172,7 @@ async def get_mp25_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VMp25Mensual).all()
+    data = db.query(VMp25Mensual).order_by(VMp25Mensual.mes).all()
     return data
 
 # ============================
@@ -203,7 +203,7 @@ async def get_mp10_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VMp10Anual).all()
+    data = db.query(VMp10Anual).order_by(VMp10Anual.anio).all()
     return data
 
 @mp10_router.get(
@@ -223,7 +223,7 @@ async def get_mp10_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VMp10Mensual).all()
+    data = db.query(VMp10Mensual).order_by(VMp10Mensual.mes).all()
     return data
 
 # ============================
@@ -256,7 +256,7 @@ async def get_o3_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VO3Anual).all()
+    data = db.query(VO3Anual).order_by(VO3Anual.anio).all()
     return data
 
 @o3_router.get(
@@ -278,7 +278,7 @@ async def get_o3_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VO3Mensual).all()
+    data = db.query(VO3Mensual).order_by(VO3Mensual.mes).all()
     return data
 
 # ============================
@@ -311,7 +311,7 @@ async def get_so2_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VSo2Anual).all()
+    data = db.query(VSo2Anual).order_by(VSo2Anual.anio).all()
     return data
 
 @so2_router.get(
@@ -331,7 +331,7 @@ async def get_so2_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VSo2Mensual).all()
+    data = db.query(VSo2Mensual).order_by(VSo2Mensual.mes).all()
     return data
 
 # ============================
@@ -365,7 +365,7 @@ async def get_no2_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VNo2Anual).all()
+    data = db.query(VNo2Anual).order_by(VNo2Anual.anio).all()
     return data
 
 @no2_router.get(
@@ -385,7 +385,7 @@ async def get_no2_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VNo2Mensual).all()
+    data = db.query(VNo2Mensual).order_by(VNo2Mensual.mes).all()
     return data
 
 # ============================
@@ -419,7 +419,7 @@ async def get_co_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VCoAnual).all()
+    data = db.query(VCoAnual).order_by(VCoAnual.anio).all()
     return data
 
 @co_router.get(
@@ -439,7 +439,7 @@ async def get_co_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VCoMensual).all()
+    data = db.query(VCoMensual).order_by(VCoMensual.mes).all()
     return data
 
 # ============================
@@ -468,7 +468,7 @@ async def get_no_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VNoAnual).all()
+    data = db.query(VNoAnual).order_by(VNoAnual.anio).all()
     return data
 
 @no_router.get(
@@ -488,7 +488,7 @@ async def get_no_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VNoMensual).all()
+    data = db.query(VNoMensual).order_by(VNoMensual.mes).all()
     return data
 
 # ============================
@@ -518,7 +518,7 @@ async def get_nox_anual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VNoxAnual).all()
+    data = db.query(VNoxAnual).order_by(VNoxAnual.anio).all()
     return data
 
 @nox_router.get(
@@ -538,7 +538,7 @@ async def get_nox_mensual(db: Session = Depends(get_db)):
 
     **Fuente:** Red SINCA
     """
-    data = db.query(VNoxMensual).all()
+    data = db.query(VNoxMensual).order_by(VNoxMensual.mes).all()
     return data
 
 # ============================
@@ -571,7 +571,7 @@ async def get_olas_calor(db: Session = Depends(get_db)):
 
     **Fuente:** DMC (Dirección Meteorológica de Chile)
     """
-    data = db.query(VNumEventosDeOlasDeCalor).all()
+    data = db.query(VNumEventosDeOlasDeCalor).order_by(VNumEventosDeOlasDeCalor.mes).all()
     return data
 
 # Incluir sub-routers en el router principal

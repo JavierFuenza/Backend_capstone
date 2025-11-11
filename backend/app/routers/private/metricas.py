@@ -110,7 +110,7 @@ async def get_temperatura(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de temperatura para una estación específica"""
     datos = db.query(VTemperatura).filter(
         VTemperatura.estacion == nombre_estacion
-    ).all()
+    ).order_by(VTemperatura.mes).all()
 
     if not datos:
         return []
@@ -122,11 +122,11 @@ async def get_mp25(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de MP2.5 (anuales y mensuales) para una estación"""
     anuales = db.query(VMp25Anual).filter(
         VMp25Anual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VMp25Anual.anio).all()
 
     mensuales = db.query(VMp25Mensual).filter(
         VMp25Mensual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VMp25Mensual.mes).all()
 
     # Convertir a formato común
     datos_anuales = [{
@@ -160,11 +160,11 @@ async def get_mp10(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de MP10 (anuales y mensuales) para una estación"""
     anuales = db.query(VMp10Anual).filter(
         VMp10Anual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VMp10Anual.anio).all()
 
     mensuales = db.query(VMp10Mensual).filter(
         VMp10Mensual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VMp10Mensual.mes).all()
 
     datos_anuales = [{
         "anio": d.anio,
@@ -197,11 +197,11 @@ async def get_o3(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de Ozono (anuales y mensuales) para una estación"""
     anuales = db.query(VO3Anual).filter(
         VO3Anual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VO3Anual.anio).all()
 
     mensuales = db.query(VO3Mensual).filter(
         VO3Mensual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VO3Mensual.mes).all()
 
     datos_anuales = [{
         "anio": d.anio,
@@ -234,11 +234,11 @@ async def get_so2(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de SO2 (anuales y mensuales) para una estación"""
     anuales = db.query(VSo2Anual).filter(
         VSo2Anual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VSo2Anual.anio).all()
 
     mensuales = db.query(VSo2Mensual).filter(
         VSo2Mensual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VSo2Mensual.mes).all()
 
     datos_anuales = [{
         "anio": d.anio,
@@ -271,11 +271,11 @@ async def get_no2(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de NO2 (anuales y mensuales) para una estación"""
     anuales = db.query(VNo2Anual).filter(
         VNo2Anual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VNo2Anual.anio).all()
 
     mensuales = db.query(VNo2Mensual).filter(
         VNo2Mensual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VNo2Mensual.mes).all()
 
     datos_anuales = [{
         "anio": d.anio,
@@ -308,11 +308,11 @@ async def get_co(nombre_estacion: str, db: Session = Depends(get_db)):
     """Obtener datos de CO (anuales y mensuales) para una estación"""
     anuales = db.query(VCoAnual).filter(
         VCoAnual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VCoAnual.anio).all()
 
     mensuales = db.query(VCoMensual).filter(
         VCoMensual.estacion == nombre_estacion
-    ).all()
+    ).order_by(VCoMensual.mes).all()
 
     datos_anuales = [{
         "anio": d.anio,
@@ -345,11 +345,11 @@ async def get_humedad_radiacion_uv(nombre_estacion: str, db: Session = Depends(g
     """Obtener datos de Humedad, Radiación UV y Olas de Calor para una estación"""
     humedad_rad_uv = db.query(VHumedadRadiacionUV).filter(
         VHumedadRadiacionUV.estacion == nombre_estacion
-    ).all()
+    ).order_by(VHumedadRadiacionUV.mes).all()
 
     olas_calor = db.query(VNumEventosDeOlasDeCalor).filter(
         VNumEventosDeOlasDeCalor.estacion == nombre_estacion
-    ).all()
+    ).order_by(VNumEventosDeOlasDeCalor.mes).all()
 
     return {
         "estacion": nombre_estacion,
