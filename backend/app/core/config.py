@@ -14,7 +14,10 @@ class Settings(BaseSettings):
     api_description: str = "API para datos ambientales de Chile"
 
     # CORS
-    allowed_origins: list = ["*"]  # En producción cambiar por dominios específicos
+    allowed_origins: list = [
+        "https://observatorio.javierfuenzam.com",
+        "http://localhost:4321",  # Desarrollo local
+    ]
     allowed_methods: list = ["GET", "POST", "PUT", "DELETE"]
     allowed_headers: list = ["*"]
 

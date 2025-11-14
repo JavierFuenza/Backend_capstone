@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from core.config import settings
 from core.database import Base, engine
 from middleware.cors import add_cors_middleware
+from middleware.security import add_security_middleware
 from routers.public import general
 from routers.private import aire, agua, estaciones, entidades_agua, metricas
 
@@ -27,6 +28,7 @@ app = FastAPI(
 
 # Agregar middleware
 add_cors_middleware(app)
+add_security_middleware(app)
 
 # Incluir routers públicos
 app.include_router(
