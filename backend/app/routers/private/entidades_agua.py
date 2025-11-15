@@ -108,6 +108,34 @@ TIPO_VISTA_MAPPING: Dict[str, Dict[str, Any]] = {
     }
 }
 
+# Mapeo de submétricas por tipo
+SUBMETRICAS_MAPPING: Dict[str, List[str]] = {
+    "Estación Oceanográfica": [
+        "Temp Superficial Del Mar",
+        "Nivel Medio Del Mar"
+    ],
+    "Cuenca Hidrográfica": [
+        "Número de glaciares",
+        "Superficie de glaciares (km²)",
+        "Volumen de hielo glaciar estimado (km³)",
+        "Volumen de agua de glaciares estimada (km³)"
+    ],
+    "Embalse": ["Concentración"],
+    "Pozo de Monitoreo": ["Nivel estático"],
+    "Estación Nivométrica": ["Altura de nieve equivalente en agua"],
+    "Estación de Evaporación": ["Evaporación real"],
+    "Estación Meteorológica": ["Cantidad de agua caída"],
+    "Estación Fluviométrica": ["Caudal medio"],
+    "Estación Costera - Coliformes Biológicos": ["Coliformes fecales"],
+    "Estación Costera - Coliformes Acuosos": ["Coliformes fecales"]
+}
+
+# Tipos que tienen submétricas dinámicas (consultan a la DB)
+TIPOS_SUBMETRICAS_DINAMICAS = [
+    "Estación Costera - Metales Disueltos",
+    "Estación Costera - Metales Sedimentos"
+]
+
 @router.get("/", response_model=List[EntidadAguaSchema])
 async def get_all_entidades_agua(db: Session = Depends(get_db)):
     """
@@ -348,3 +376,122 @@ async def get_datos_estacion_por_tipo(
 
     # Convertir a schema para retornar con el formato correcto
     return [schema.from_orm(dato) for dato in datos]
+
+@router.get("/submetricas/{tipo}/{nombre_estacion}")
+async def get_submetricas_by_tipo_estacion(
+    tipo: str,
+    nombre_estacion: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtener las submétricas (nombres de gráficos) disponibles para una estación según su tipo.
+
+    Este endpoint retorna una lista de submétricas que se pueden graficar para una
+    estación específica, dependiendo de su tipo. Las submétricas representan las
+    diferentes variables que se miden en cada tipo de estación.
+
+    Args:
+        tipo (str): Tipo de entidad de agua (debe coincidir exactamente con los tipos del sistema)
+        nombre_estacion (str): Nombre de la estación de agua
+
+    Tipos y sus submétricas:
+        - Estación Oceanográfica: Temperatura superficial del mar, Nivel medio del mar
+        - Cuenca Hidrográfica: Número de glaciares, Superficie, Volumen de hielo, Volumen de agua
+        - Estación Costera - Metales Disueltos: Lista dinámica de metales (cadmio, cobre, etc.)
+        - Estación Costera - Metales Sedimentos: Lista dinámica de metales totales
+        - Otros tipos: Una sola submétrica descriptiva
+
+    Returns:
+        dict: Objeto con tipo, estación y lista de submétricas disponibles
+
+    Raises:
+        HTTPException 400: Si el tipo no es válido
+        HTTPException 404: Si no se encuentra la estación o no tiene datos
+
+    Ejemplo de uso:
+        GET /entidades-agua/submetricas/Estación Oceanográfica/Ancud
+
+    Ejemplo de respuesta para Estación Oceanográfica:
+        {
+            "tipo": "Estación Oceanográfica",
+            "estacion": "Ancud",
+            "submetricas": [
+                "Temp Superficial Del Mar",
+                "Nivel Medio Del Mar"
+            ]
+        }
+
+    Ejemplo de respuesta para Metales Disueltos:
+        {
+            "tipo": "Estación Costera - Metales Disueltos",
+            "estacion": "Ancud",
+            "submetricas": [
+                "Cadmio disuelto",
+                "Cobre disuelto",
+                "Mercurio disuelto",
+                "Plomo disuelto"
+            ]
+        }
+    """
+    # Validar que el tipo existe en el mapeo
+    if tipo not in TIPO_VISTA_MAPPING:
+        tipos_disponibles = ", ".join(TIPO_VISTA_MAPPING.keys())
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tipo '{tipo}' no válido. Tipos disponibles: {tipos_disponibles}"
+        )
+
+    # Verificar si el tipo tiene submétricas dinámicas (metales)
+    if tipo in TIPOS_SUBMETRICAS_DINAMICAS:
+        # Para metales, consultar la base de datos para obtener los parámetros únicos
+        config = TIPO_VISTA_MAPPING[tipo]
+        model = config["model"]
+        estacion_column = config["estacion_column"]
+        estacion_attr = getattr(model, estacion_column)
+
+        # Consultar valores únicos de parametros_poal para esta estación
+        parametros = db.query(model.parametros_poal).filter(
+            estacion_attr == nombre_estacion
+        ).distinct().all()
+
+        if not parametros:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se encontraron datos para la estación '{nombre_estacion}' en el tipo '{tipo}'"
+            )
+
+        # Extraer los nombres de los parámetros (metales)
+        submetricas = sorted([param[0] for param in parametros if param[0]])
+
+    elif tipo in SUBMETRICAS_MAPPING:
+        # Para tipos con submétricas estáticas definidas en el mapeo
+        submetricas = SUBMETRICAS_MAPPING[tipo]
+
+        # Verificar que la estación existe en la base de datos
+        config = TIPO_VISTA_MAPPING[tipo]
+        model = config["model"]
+        estacion_column = config["estacion_column"]
+        estacion_attr = getattr(model, estacion_column)
+
+        existe = db.query(model).filter(
+            estacion_attr == nombre_estacion
+        ).first()
+
+        if not existe:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se encontraron datos para la estación '{nombre_estacion}' en el tipo '{tipo}'"
+            )
+
+    else:
+        # Tipo no tiene submétricas configuradas
+        raise HTTPException(
+            status_code=400,
+            detail=f"El tipo '{tipo}' no tiene submétricas configuradas"
+        )
+
+    return {
+        "tipo": tipo,
+        "estacion": nombre_estacion,
+        "submetricas": submetricas
+    }
