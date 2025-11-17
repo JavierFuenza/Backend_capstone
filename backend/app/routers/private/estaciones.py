@@ -12,7 +12,7 @@ from models.aire import (
     VNo2Anual, VNo2Mensual, VCoAnual, VCoMensual,
     VNoAnual, VNoMensual, VNoxAnual, VNoxMensual
 )
-from schemas.estaciones import EstacionSchema, RegionSchema, EstacionMetricasSchema, EstacionSubmetricasSchema, DatosSubmetricaSchema
+from schemas.estaciones import EstacionSchema, RegionSchema, EstacionMetricasSchema, EstacionSubmetricasSchema, DatosSubmetricaSchema, EstacionConMetricasSchema
 
 router = APIRouter(
     prefix="/estaciones",
@@ -86,6 +86,112 @@ async def get_estacion_metricas(
         "descripcion": estacion.descripcion,
         "metricas_disponibles": metricas
     }
+
+@router.get("/con-metricas", response_model=List[EstacionConMetricasSchema])
+async def get_all_estaciones_con_metricas(
+    db: Session = Depends(get_db),
+    numero_region: Optional[int] = Query(None, description="Filtrar por número de región")
+):
+    """Obtener todas las estaciones con información de qué métricas tiene cada una"""
+    from sqlalchemy import exists
+
+    # Obtener todas las estaciones
+    query = db.query(Estacion)
+    if numero_region is not None:
+        query = query.filter(Estacion.numero_region == numero_region)
+
+    estaciones = query.order_by(Estacion.nombre).all()
+
+    # Pre-cargar qué estaciones tienen qué métricas usando sets (más eficiente)
+    estaciones_con_temperatura = set(
+        row[0] for row in db.query(distinct(VTemperatura.estacion)).all()
+    )
+
+    estaciones_con_humedad = set(
+        row[0] for row in db.query(distinct(VHumedadRadiacionUV.estacion)).all()
+    )
+
+    estaciones_con_olas_calor = set(
+        row[0] for row in db.query(distinct(VNumEventosDeOlasDeCalor.estacion)).all()
+    )
+
+    # Para contaminantes específicos, cargar por tipo
+    estaciones_con_mp25 = set()
+    for tabla in [VMp25Anual, VMp25Mensual]:
+        estaciones_con_mp25.update(row[0] for row in db.query(distinct(tabla.estacion)).all())
+
+    estaciones_con_mp10 = set()
+    for tabla in [VMp10Anual, VMp10Mensual]:
+        estaciones_con_mp10.update(row[0] for row in db.query(distinct(tabla.estacion)).all())
+
+    estaciones_con_o3 = set()
+    for tabla in [VO3Anual, VO3Mensual]:
+        estaciones_con_o3.update(row[0] for row in db.query(distinct(tabla.estacion)).all())
+
+    estaciones_con_so2 = set()
+    for tabla in [VSo2Anual, VSo2Mensual]:
+        estaciones_con_so2.update(row[0] for row in db.query(distinct(tabla.estacion)).all())
+
+    estaciones_con_no2 = set()
+    for tabla in [VNo2Anual, VNo2Mensual]:
+        estaciones_con_no2.update(row[0] for row in db.query(distinct(tabla.estacion)).all())
+
+    estaciones_con_co = set()
+    for tabla in [VCoAnual, VCoMensual]:
+        estaciones_con_co.update(row[0] for row in db.query(distinct(tabla.estacion)).all())
+
+    result = []
+    for estacion in estaciones:
+        metricas = []
+        contaminantes_list = []
+
+        # Verificar temperatura
+        tiene_temperatura = estacion.nombre in estaciones_con_temperatura
+        if tiene_temperatura:
+            metricas.append("Temperatura")
+
+        # Verificar humedad
+        tiene_humedad = estacion.nombre in estaciones_con_humedad
+        if tiene_humedad:
+            metricas.append("Humedad Radiación y UV")
+
+        # Verificar cada contaminante específico
+        if estacion.nombre in estaciones_con_mp25:
+            contaminantes_list.append("mp25")
+        if estacion.nombre in estaciones_con_mp10:
+            contaminantes_list.append("mp10")
+        if estacion.nombre in estaciones_con_o3:
+            contaminantes_list.append("o3")
+        if estacion.nombre in estaciones_con_so2:
+            contaminantes_list.append("so2")
+        if estacion.nombre in estaciones_con_no2:
+            contaminantes_list.append("no2")
+        if estacion.nombre in estaciones_con_co:
+            contaminantes_list.append("co")
+
+        if contaminantes_list:
+            metricas.append("Contaminantes")
+
+        # Verificar olas de calor
+        if estacion.nombre in estaciones_con_olas_calor:
+            metricas.append("Eventos de Olas de Calor")
+
+        result.append({
+            "nombre": estacion.nombre,
+            "latitud": estacion.latitud,
+            "longitud": estacion.longitud,
+            "numero_region": estacion.numero_region,
+            "nombre_region": estacion.nombre_region,
+            "descripcion": estacion.descripcion,
+            "metricas_disponibles": metricas,
+            "metricas_detalladas": {
+                "temperatura": tiene_temperatura,
+                "humedad_radiacion_uv": tiene_humedad,
+                "contaminantes": contaminantes_list
+            }
+        })
+
+    return result
 
 @router.get("/submetricas", response_model=EstacionSubmetricasSchema)
 async def get_estacion_submetricas(

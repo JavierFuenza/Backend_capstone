@@ -52,3 +52,21 @@ class DatosSubmetricaSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MetricasDetalladasSchema(BaseModel):
+    temperatura: bool = Field(default=False)
+    humedad_radiacion_uv: bool = Field(default=False)
+    contaminantes: List[str] = Field(default_factory=list, description="Lista de contaminantes específicos: mp25, mp10, o3, so2, no2, co")
+
+class EstacionConMetricasSchema(BaseModel):
+    nombre: str = Field(..., description="Nombre de la estación")
+    latitud: Optional[float] = Field(None, description="Latitud en formato decimal")
+    longitud: Optional[float] = Field(None, description="Longitud en formato decimal")
+    numero_region: Optional[int] = Field(None, description="Número de la región (1-16)")
+    nombre_region: Optional[str] = Field(None, max_length=100, description="Nombre de la región")
+    descripcion: Optional[str] = Field(None, description="Descripción de la estación")
+    metricas_disponibles: List[str] = Field(..., description="Lista de categorías de métricas disponibles")
+    metricas_detalladas: MetricasDetalladasSchema = Field(..., description="Detalle específico de cada métrica")
+
+    class Config:
+        from_attributes = True
